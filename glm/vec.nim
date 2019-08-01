@@ -15,7 +15,7 @@ proc `/=`(a: var SomeInteger; b: SomeInteger): void =
 
 ##Vector module contains all types and functions to manipulate vectors
 type
-  VectorElementType = SomeNumber | bool
+  VectorElementType = SomeNumber or bool or enum
   Vec*[N : static[int], T: VectorElementType] = object
     arr*: array[N, T]
 
@@ -23,6 +23,7 @@ type
   Vec4*[T: VectorElementType] = Vec[4,T]
   Vec3*[T: VectorElementType] = Vec[3,T]
   Vec2*[T: VectorElementType] = Vec[2,T]
+  Vec1*[T: VectorElementType] = Vec[1,T]
 
 proc `$`*(v: Vec) : string =
   result = "["
@@ -103,6 +104,8 @@ mathPerComponent(`/`)
 mathPerComponent(`*`)
 mathPerComponent(`div`)
 mathPerComponent(`mod`)
+mathPerComponent(`shr`)
+mathPerComponent(`or`)
 
 template mathInpl(opName): untyped =
   proc opName*[N,T](v: var Vec[N,T]; u: Vec[N,T]): void =
@@ -322,6 +325,15 @@ foreachImpl(ln)
 foreachImpl(log2)
 foreachImpl(sqrt)
 
+#######################
+# component functions #
+#######################
+
+proc compMul*[N,T](v: Vec[N,T]):T =
+  result = T(1)
+  for i in 0 ..< N:
+    result *= v.arr[i];
+
 ####################
 # common functions #
 ####################
@@ -485,14 +497,290 @@ proc refract*[N,T](i,n: Vec[N,T]; eta: T): Vec[N,T] =
   if k >= 0.0:
     result = eta * i - (eta * dot(n, i) + sqrt(k)) * n;
 
+#######################
+# Rounding            #
+#######################
+
+#/// @ref gtc_round
+
+#include "../integer.hpp"
+#include "../ext/vector_integer.hpp"
+
+#include "../integer.hpp"
+
+#namespace glm#{
+#namespace detail
+
+proc compute_ceilShift[L,T,C](v:Vec[L,T], Shift:T):Vec[L,T] =
+  when C == false:
+    return v;
+  else:
+    return v or (v shr Shift);
+
+proc compute_ceilPowerOfTwo[L,T,S](x:Vec[L,T]):Vec[L,T] =
+  #{
+  #GLM_STATIC_ASSERT(!std::numeric_limits<T>::is_iec559, "'ceilPowerOfTwo' only accept integer scalar or vector inputs");
+
+  when S == true:
+    let Sign:Vec[L,T] = sign(x)
+
+    var v:Vec[L,T] = abs(x);
+
+    v = v - T(1); #--should see if a cast or just a T() is right here
+    v = v or (v shr T(1));
+    v = v or (v shr T(2));
+    v = v or (v shr T(4));
+    v = compute_ceilShift[L, T, sizeof(T) >= 2](v, 8);
+    v = compute_ceilShift[L, T, sizeof(T) >= 4](v, 16);
+    v = compute_ceilShift[L, T, sizeof(T) >= 8](v, 32);
+    return (v + T(1)) * Sign;
+  else:
+    var v:Vec[L,T] = x;
+
+    v = v - T(1);
+    v = v or (v shr T(1));
+    v = v or (v shr T(2));
+    v = v or (v shr T(4));
+    v = compute_ceilShift[L, T, sizeof(T) >= 2](v, 8);
+    v = compute_ceilShift[L, T, sizeof(T) >= 4](v, 16);
+    v = compute_ceilShift[L, T, sizeof(T) >= 8](v, 32);
+    return v + cast[T](1);
+  #}
+#};
+
+proc compute_ceilMultiple[T]( Source:T, Multiple:T):T =
+#{
+  when T is SomeFloat:
+    if(Source > T(0)):
+      return Source + (Multiple - mod(Source, Multiple));
+    else:
+      return Source + mod(-Source, Multiple);
+  elif T is SomeUnsignedInt:
+    let Tmp:T = Source - T(1);
+    return Tmp + (Multiple - (Tmp mod Multiple));
+  elif T is SomeSignedInt:
+    assert(Multiple > T(0));
+    if(Source > T(0)):
+    #{
+      let Tmp:T = Source - T(1);
+      return Tmp + (Multiple - (Tmp mod Multiple));
+    #}
+    else:
+      return Source + (-Source mod Multiple);
+
+proc compute_floorMultiple[T]( Source:T,  Multiple:T):T =
+#{
+  when T is SomeFloat:
+    if(Source >= T(0)):
+      return Source - mod(Source, Multiple);
+    else:
+      return Source - mod(Source, Multiple) - Multiple;
+  elif T is SomeUnsignedInt:
+    if(Source >= T(0)):
+      return Source - Source mod Multiple;
+    else:
+    #{
+      let Tmp:T = Source + T(1);
+      return Tmp - Tmp mod Multiple - Multiple;
+    #}
+  elif T is SomeSignedInt:
+    if(Source >= T(0)):
+      return Source - Source mod Multiple;
+    else:
+    #{
+      let Tmp:T = Source + T(1);
+      return Tmp - Tmp mod Multiple - Multiple;
+    #}
+  #}
+#};
+
+#[
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER bool isPowerOfTwo(genIUType Value)
+	#{
+		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'isPowerOfTwo' only accept integer inputs");
+
+		genIUType const Result = glm::abs(Value);
+		return !(Result & (Result - 1));
+	#}
+
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER genIUType nextPowerOfTwo(genIUType value)
+	#{
+		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'nextPowerOfTwo' only accept integer inputs");
+
+		return detail::compute_ceilPowerOfTwo<1, genIUType, defaultp, std::numeric_limits<genIUType>::is_signed>::call(vec<1, genIUType, defaultp>(value)).x;
+	#}
+
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER genIUType prevPowerOfTwo(genIUType value)
+	#{
+		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'prevPowerOfTwo' only accept integer inputs");
+
+		return isPowerOfTwo(value) ? value : cast[genIUType](1) << findMSB(value);
+	#}
+
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER bool isMultiple(genIUType Value, genIUType Multiple)
+	#{
+		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'isMultiple' only accept integer inputs");
+
+		return isMultiple(vec<1, genIUType>(Value), vec<1, genIUType>(Multiple)).x;
+	#}
+
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER genIUType nextMultiple(genIUType Source, genIUType Multiple)
+	#{
+		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'nextMultiple' only accept integer inputs");
+
+		return detail::compute_ceilMultiple<std::numeric_limits<genIUType>::is_iec559, std::numeric_limits<genIUType>::is_signed>::call(Source, Multiple);
+	#}
+
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER genIUType prevMultiple(genIUType Source, genIUType Multiple)
+	#{
+		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'prevMultiple' only accept integer inputs");
+
+		return detail::compute_floorMultiple<std::numeric_limits<genIUType>::is_iec559, std::numeric_limits<genIUType>::is_signed>::call(Source, Multiple);
+	#}
+
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER int findNSB(genIUType x, int significantBitCount)
+	#{
+		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'findNSB' only accept integer inputs");
+
+		if(bitCount(x) < significantBitCount)
+			return -1;
+
+		genIUType const One = cast[genIUType](1);
+		int bitPos = 0;
+
+		genIUType key = x;
+		int nBitCount = significantBitCount;
+		int Step = sizeof(x) * 8 / 2;
+		while (key > One)
+		#{
+			genIUType Mask = cast[genIUType]((One << Step) - One);
+			genIUType currentKey = key & Mask;
+			int currentBitCount = bitCount(currentKey);
+			if (nBitCount > currentBitCount)
+			#{
+				nBitCount -= currentBitCount;
+				bitPos += Step;
+				key >>= cast[genIUType](Step);
+			#}
+			else
+			#{
+				key = key & Mask;
+			#}
+
+			Step >>= 1;
+		#}
+
+		return cast[int](bitPos);
+	#}
+#}//namespace glm
+]#
+proc compute_roundMultiple[T](Source:T, Multiple:T):T =
+#		#{
+  if (Source >= 0.T):
+    return Source - mod(Source, Multiple);
+  else:
+    let Tmp:T = Source + 1.T;
+    return Tmp - mod(Tmp, Multiple) - Multiple;
+#[
+	//////////////////
+	// ceilPowerOfTwo
+
+	template<typename genType>
+	GLM_FUNC_QUALIFIER genType ceilPowerOfTwo(genType value)
+	#{
+		return detail::compute_ceilPowerOfTwo<1, genType, defaultp, std::numeric_limits<genType>::is_signed>::call(vec<1, genType, defaultp>(value)).x;
+	#}
+
+	template<length_t L, typename T, qualifier Q>
+	GLM_FUNC_QUALIFIER vec<L, T, Q> ceilPowerOfTwo(vec<L, T, Q> const& v)
+	#{
+		return detail::compute_ceilPowerOfTwo<L, T, Q, std::numeric_limits<T>::is_signed>::call(v);
+	#}
+
+	///////////////////
+	// floorPowerOfTwo
+
+	template<typename genType>
+	GLM_FUNC_QUALIFIER genType floorPowerOfTwo(genType value)
+	#{
+		return isPowerOfTwo(value) ? value : cast[genType](1) << findMSB(value);
+	#}
+
+	template<length_t L, typename T, qualifier Q>
+	GLM_FUNC_QUALIFIER vec<L, T, Q> floorPowerOfTwo(vec<L, T, Q> const& v)
+	#{
+		return detail::functor1<vec, L, T, T, Q>::call(floorPowerOfTwo, v);
+	#}
+
+	///////////////////
+	// roundPowerOfTwo
+
+	template<typename genIUType>
+	GLM_FUNC_QUALIFIER genIUType roundPowerOfTwo(genIUType value)
+	#{
+		if(isPowerOfTwo(value))
+			return value;
+
+		genIUType const prev = cast[genIUType](1) << findMSB(value);
+		genIUType const next = prev << cast[genIUType](1);
+		return (next - value) < (value - prev) ? next : prev;
+	#}
+
+	template<length_t L, typename T, qualifier Q>
+	GLM_FUNC_QUALIFIER vec<L, T, Q> roundPowerOfTwo(vec<L, T, Q> const& v)
+	#{
+		return detail::functor1<vec, L, T, T, Q>::call(roundPowerOfTwo, v);
+	#}
+]#
+#//////////////////////
+#// ceilMultiple
+
+#template<typename genType>
+proc ceilMultiple[T](Source:T, Multiple:T):T =
+#{
+  compute_ceilMultiple[T](Source, Multiple);
+#}
+
+foreachZipImpl(ceilMultiple)
+
+#//////////////////////
+#// floorMultiple
+
+proc floorMultiple[T](Source:T, Multiple:T):T =
+#{
+  compute_floorMultiple[T](Source, Multiple);
+#}
+
+foreachZipImpl(floorMultiple)
+
+#//////////////////////
+#// roundMultiple
+
+proc roundMultiple[T](Source:T, Multiple:T):T =
+#{
+  compute_roundMultiple[T](Source, Multiple);
+#}
+
+foreachZipImpl(roundMultiple)
+
+#}//namespace glm
+
 ###################
 # more type names #
 ###################
 
-type
-  Vec4u8* = Vec[4, uint8]
+#type
+#  Vec4u8* = Vec[4, uint8]
+#  Vec3u8* = Vec[3, uint8]
 
-template vecGen(U:untyped,V:typed):typed=
+template vecGen(U:untyped,V:typed) =
   ## ``U`` suffix
   ## ``V`` valType
   ##
@@ -500,6 +788,7 @@ template vecGen(U:untyped,V:typed):typed=
     `Vec4 U`* {.inject.} = Vec4[V]
     `Vec3 U`* {.inject.} = Vec3[V]
     `Vec2 U`* {.inject.} = Vec2[V]
+    `Vec1 U`* {.inject.} = Vec1[V]
   proc `vec4 U`*(x, y, z, w: V)          : `Vec4 U` {.inject, inline.} = `Vec4 U`(arr: [  x,   y,   z,   w])
   proc `vec4 U`*(v: `Vec3 U`, w: V)      : `Vec4 U` {.inject, inline.} = `Vec4 U`(arr: [v.x, v.y, v.z,   w])
   proc `vec4 U`*(x: V, v: `Vec3 U`)      : `Vec4 U` {.inject, inline.} = `Vec4 U`(arr: [  x, v.x, v.y, v.z])
@@ -533,6 +822,7 @@ vecGen l, int64
 vecGen ui, uint32
 vecGen ul, uint64
 vecGen b, bool
+vecGen u8, uint8 
 
 
 
@@ -679,5 +969,5 @@ when isMainModule:
     ["  0.001", "  1.0  ", "100.0  ", "  0.0  "]
   doAssert columnFormat( vec4(1,10,100,1000) ) ==
     ["   1", "  10", " 100", "1000"]
-  doAssert columnFormat(vec4("a", "ab", "abc", "abcd")) ==
-    ["a   ", "ab  ", "abc ", "abcd"]
+  #doAssert columnFormat(vec4("a", "ab", "abc", "abcd")) ==
+  #  ["a   ", "ab  ", "abc ", "abcd"]
