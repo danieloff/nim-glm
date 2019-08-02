@@ -772,6 +772,302 @@ foreachZipImpl(roundMultiple)
 
 #}//namespace glm
 
+
+######################
+# bitfieldInterleave #
+######################
+
+#/// @ref gtc_bitfield
+
+#include "../simd/integer.h"
+
+#template<>
+proc bitfieldInterleave*(x:uint8, y:uint8):uint16 = 
+#{
+  var REG1:uint16 = x;
+  var REG2:uint16 = y;
+
+  REG1 = ((REG1 shl  4) or REG1) and uint16(0x0F0F);
+  REG2 = ((REG2 shl  4) or REG2) and uint16(0x0F0F);
+
+  REG1 = ((REG1 shl  2) or REG1) and uint16(0x3333);
+  REG2 = ((REG2 shl  2) or REG2) and uint16(0x3333);
+
+  REG1 = ((REG1 shl  1) or REG1) and uint16(0x5555);
+  REG2 = ((REG2 shl  1) or REG2) and uint16(0x5555);
+
+  return REG1 or uint16(REG2 shl 1);
+#}
+
+#template<>
+proc bitfieldInterleave*(x:uint16, y:uint16):uint32 = 
+#{
+  var REG1:uint32 = x;
+  var REG2:uint32 = y;
+
+  REG1 = ((REG1 shl  8) or REG1) and uint32(0x00FF00FF);
+  REG2 = ((REG2 shl  8) or REG2) and uint32(0x00FF00FF);
+
+  REG1 = ((REG1 shl  4) or REG1) and uint32(0x0F0F0F0F);
+  REG2 = ((REG2 shl  4) or REG2) and uint32(0x0F0F0F0F);
+
+  REG1 = ((REG1 shl  2) or REG1) and uint32(0x33333333);
+  REG2 = ((REG2 shl  2) or REG2) and uint32(0x33333333);
+
+  REG1 = ((REG1 shl  1) or REG1) and uint32(0x55555555);
+  REG2 = ((REG2 shl  1) or REG2) and uint32(0x55555555);
+
+  return REG1 or (REG2 shl 1);
+#}
+
+#template<>
+proc bitfieldInterleave*(x:uint32, y:uint32):uint64 = 
+#{
+  var REG1:uint64 = x;
+  var REG2:uint64 = y;
+
+  REG1 = ((REG1 shl 16) or REG1) and uint64(0x0000FFFF0000FFFF'u64);
+  REG2 = ((REG2 shl 16) or REG2) and uint64(0x0000FFFF0000FFFF'u64);
+
+  REG1 = ((REG1 shl  8) or REG1) and uint64(0x00FF00FF00FF00FF'u64);
+  REG2 = ((REG2 shl  8) or REG2) and uint64(0x00FF00FF00FF00FF'u64);
+
+  REG1 = ((REG1 shl  4) or REG1) and uint64(0x0F0F0F0F0F0F0F0F'u64);
+  REG2 = ((REG2 shl  4) or REG2) and uint64(0x0F0F0F0F0F0F0F0F'u64);
+
+  REG1 = ((REG1 shl  2) or REG1) and uint64(0x3333333333333333'u64);
+  REG2 = ((REG2 shl  2) or REG2) and uint64(0x3333333333333333'u64);
+
+  REG1 = ((REG1 shl  1) or REG1) and uint64(0x5555555555555555'u64);
+  REG2 = ((REG2 shl  1) or REG2) and uint64(0x5555555555555555'u64);
+
+  return REG1 or (REG2 shl 1);
+#}
+
+#template<>
+proc bitfieldInterleave*(x:uint8, y:uint8, z:uint8):uint32 = 
+#{
+  var REG1:uint32 = x;
+  var REG2:uint32 = y;
+  var REG3:uint32 = z;
+
+  REG1 = ((REG1 shl 16) or REG1) and uint32(0xFF0000FFu);
+  REG2 = ((REG2 shl 16) or REG2) and uint32(0xFF0000FFu);
+  REG3 = ((REG3 shl 16) or REG3) and uint32(0xFF0000FFu);
+
+  REG1 = ((REG1 shl  8) or REG1) and uint32(0x0F00F00Fu);
+  REG2 = ((REG2 shl  8) or REG2) and uint32(0x0F00F00Fu);
+  REG3 = ((REG3 shl  8) or REG3) and uint32(0x0F00F00Fu);
+
+  REG1 = ((REG1 shl  4) or REG1) and uint32(0xC30C30C3u);
+  REG2 = ((REG2 shl  4) or REG2) and uint32(0xC30C30C3u);
+  REG3 = ((REG3 shl  4) or REG3) and uint32(0xC30C30C3u);
+
+  REG1 = ((REG1 shl  2) or REG1) and uint32(0x49249249u);
+  REG2 = ((REG2 shl  2) or REG2) and uint32(0x49249249u);
+  REG3 = ((REG3 shl  2) or REG3) and uint32(0x49249249u);
+
+  return REG1 or (REG2 shl 1) or (REG3 shl 2);
+#}
+
+#template<>
+proc bitfieldInterleave*(x:uint16, y:uint16, z:uint16):uint64 = 
+#{
+  var REG1:uint64 = x;
+  var REG2:uint64 = y;
+  var REG3:uint64 = z;
+
+  REG1 = ((REG1 shl 32) or REG1) and uint64(0xFFFF00000000FFFF'u64);
+  REG2 = ((REG2 shl 32) or REG2) and uint64(0xFFFF00000000FFFF'u64);
+  REG3 = ((REG3 shl 32) or REG3) and uint64(0xFFFF00000000FFFF'u64);
+
+  REG1 = ((REG1 shl 16) or REG1) and uint64(0x00FF0000FF0000FF'u64);
+  REG2 = ((REG2 shl 16) or REG2) and uint64(0x00FF0000FF0000FF'u64);
+  REG3 = ((REG3 shl 16) or REG3) and uint64(0x00FF0000FF0000FF'u64);
+
+  REG1 = ((REG1 shl  8) or REG1) and uint64(0xF00F00F00F00F00F'u64);
+  REG2 = ((REG2 shl  8) or REG2) and uint64(0xF00F00F00F00F00F'u64);
+  REG3 = ((REG3 shl  8) or REG3) and uint64(0xF00F00F00F00F00F'u64);
+
+  REG1 = ((REG1 shl  4) or REG1) and uint64(0x30C30C30C30C30C3'u64);
+  REG2 = ((REG2 shl  4) or REG2) and uint64(0x30C30C30C30C30C3'u64);
+  REG3 = ((REG3 shl  4) or REG3) and uint64(0x30C30C30C30C30C3'u64);
+
+  REG1 = ((REG1 shl  2) or REG1) and uint64(0x9249249249249249'u64);
+  REG2 = ((REG2 shl  2) or REG2) and uint64(0x9249249249249249'u64);
+  REG3 = ((REG3 shl  2) or REG3) and uint64(0x9249249249249249'u64);
+
+  return REG1 or (REG2 shl 1) or (REG3 shl 2);
+#}
+
+#template<>
+proc bitfieldInterleave*(x:uint32, y:uint32, z:uint32):uint64 = 
+#{
+  var REG1:uint64 = x;
+  var REG2:uint64 = y;
+  var REG3:uint64 = z;
+
+  REG1 = ((REG1 shl 32) or REG1) and uint64(0xFFFF00000000FFFF'u64);
+  REG2 = ((REG2 shl 32) or REG2) and uint64(0xFFFF00000000FFFF'u64);
+  REG3 = ((REG3 shl 32) or REG3) and uint64(0xFFFF00000000FFFF'u64);
+
+  REG1 = ((REG1 shl 16) or REG1) and uint64(0x00FF0000FF0000FF'u64);
+  REG2 = ((REG2 shl 16) or REG2) and uint64(0x00FF0000FF0000FF'u64);
+  REG3 = ((REG3 shl 16) or REG3) and uint64(0x00FF0000FF0000FF'u64);
+
+  REG1 = ((REG1 shl  8) or REG1) and uint64(0xF00F00F00F00F00F'u64);
+  REG2 = ((REG2 shl  8) or REG2) and uint64(0xF00F00F00F00F00F'u64);
+  REG3 = ((REG3 shl  8) or REG3) and uint64(0xF00F00F00F00F00F'u64);
+
+  REG1 = ((REG1 shl  4) or REG1) and uint64(0x30C30C30C30C30C3'u64);
+  REG2 = ((REG2 shl  4) or REG2) and uint64(0x30C30C30C30C30C3'u64);
+  REG3 = ((REG3 shl  4) or REG3) and uint64(0x30C30C30C30C30C3'u64);
+
+  REG1 = ((REG1 shl  2) or REG1) and uint64(0x9249249249249249'u64);
+  REG2 = ((REG2 shl  2) or REG2) and uint64(0x9249249249249249'u64);
+  REG3 = ((REG3 shl  2) or REG3) and uint64(0x9249249249249249'u64);
+
+  return REG1 or (REG2 shl 1) or (REG3 shl 2);
+#}
+
+#template<>
+proc bitfieldInterleave*(x:uint8, y:uint8, z:uint8, w:uint8):uint32 = 
+#{
+  var REG1:uint32 = x;
+  var REG2:uint32 = y;
+  var REG3:uint32 = z;
+  var REG4:uint32 = w;
+
+  REG1 = ((REG1 shl 12) or REG1) and uint32(0x000F000Fu);
+  REG2 = ((REG2 shl 12) or REG2) and uint32(0x000F000Fu);
+  REG3 = ((REG3 shl 12) or REG3) and uint32(0x000F000Fu);
+  REG4 = ((REG4 shl 12) or REG4) and uint32(0x000F000Fu);
+
+  REG1 = ((REG1 shl  6) or REG1) and uint32(0x03030303u);
+  REG2 = ((REG2 shl  6) or REG2) and uint32(0x03030303u);
+  REG3 = ((REG3 shl  6) or REG3) and uint32(0x03030303u);
+  REG4 = ((REG4 shl  6) or REG4) and uint32(0x03030303u);
+
+  REG1 = ((REG1 shl  3) or REG1) and uint32(0x11111111u);
+  REG2 = ((REG2 shl  3) or REG2) and uint32(0x11111111u);
+  REG3 = ((REG3 shl  3) or REG3) and uint32(0x11111111u);
+  REG4 = ((REG4 shl  3) or REG4) and uint32(0x11111111u);
+
+  return REG1 or (REG2 shl 1) or (REG3 shl 2) or (REG4 shl 3);
+#}
+
+#template<>
+proc bitfieldInterleave*(x:uint16, y:uint16, z:uint16, w:uint16):uint64 = 
+#{
+  var REG1:uint64 = x;
+  var REG2:uint64 = y;
+  var REG3:uint64 = z;
+  var REG4:uint64 = w;
+
+  REG1 = ((REG1 shl 24) or REG1) and uint64(0x000000FF000000FF'u64);
+  REG2 = ((REG2 shl 24) or REG2) and uint64(0x000000FF000000FF'u64);
+  REG3 = ((REG3 shl 24) or REG3) and uint64(0x000000FF000000FF'u64);
+  REG4 = ((REG4 shl 24) or REG4) and uint64(0x000000FF000000FF'u64);
+
+  REG1 = ((REG1 shl 12) or REG1) and uint64(0x000F000F000F000F'u64);
+  REG2 = ((REG2 shl 12) or REG2) and uint64(0x000F000F000F000F'u64);
+  REG3 = ((REG3 shl 12) or REG3) and uint64(0x000F000F000F000F'u64);
+  REG4 = ((REG4 shl 12) or REG4) and uint64(0x000F000F000F000F'u64);
+
+  REG1 = ((REG1 shl  6) or REG1) and uint64(0x0303030303030303'u64);
+  REG2 = ((REG2 shl  6) or REG2) and uint64(0x0303030303030303'u64);
+  REG3 = ((REG3 shl  6) or REG3) and uint64(0x0303030303030303'u64);
+  REG4 = ((REG4 shl  6) or REG4) and uint64(0x0303030303030303'u64);
+
+  REG1 = ((REG1 shl  3) or REG1) and uint64(0x1111111111111111'u64);
+  REG2 = ((REG2 shl  3) or REG2) and uint64(0x1111111111111111'u64);
+  REG3 = ((REG3 shl  3) or REG3) and uint64(0x1111111111111111'u64);
+  REG4 = ((REG4 shl  3) or REG4) and uint64(0x1111111111111111'u64);
+
+  return REG1 or (REG2 shl 1) or (REG3 shl 2) or (REG4 shl 3);
+#}
+#}//namespace detail
+
+#template<typename genIUType>
+proc mask[T: SomeInteger](Bits:T):T = 
+#{
+  #GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'mask' accepts only integer values");
+
+  return if Bits >= sizeof(T) * 8 : not T(0) else: (T(1) shl Bits) - T(1)
+#}
+
+foreachImpl(mask)
+#template<length_t L, typename T, qualifier Q>
+#proc mask[L:Natural,T:SomeInteger](v:Vec[L,T]):Vec[L,T] =
+#{
+  #GLM_STATIC_ASSERT(std::numeric_limits<T>::is_integer, "'mask' accepts only integer values");
+
+#  return detail::functor1<vec, L, T, T, Q>::call(mask, v);
+#}
+
+#template<typename genIType>
+proc bitfieldRotateRight*[T: SomeInteger](In:T, Shift:int):T = 
+#{
+  #GLM_STATIC_ASSERT(std::numeric_limits<genIType>::is_integer, "'bitfieldRotateRight' accepts only integer values");
+
+  let BitSize:int = T(sizeof(T) * 8);
+  return (In shl T(Shift)) or (In shr T(BitSize - Shift));
+#}
+
+#template<length_t L, typename T, qualifier Q>
+proc bitfieldRotateRight*[L:static[int], T:SomeInteger]( In:Vec[L,T], Shift:int):Vec[L,T] =
+#{
+  #GLM_STATIC_ASSERT(std::numeric_limits<T>::is_integer, "'bitfieldRotateRight' accepts only integer values");
+
+  let BitSize:int = int(sizeof(T) * 8);
+  return (In shl T(Shift)) or (In shr T(BitSize - Shift));
+#}
+
+#template<typename genIType>
+proc bitfieldRotateLeft*[T:SomeInteger](In:T, Shift:int):T = 
+#{
+  #GLM_STATIC_ASSERT(std::numeric_limits<genIType>::is_integer, "'bitfieldRotateLeft' accepts only integer values");
+
+  let BitSize:int = T(sizeof(T) * 8);
+  return (In shr T(Shift)) or (In shl T(BitSize - Shift));
+#}
+
+#template<length_t L, typename T, qualifier Q>
+proc bitfieldRotateLeft*[L:static[int],T:SomeInteger]( In:Vec[L,T], Shift:int):Vec[L,T] =
+#{
+  #GLM_STATIC_ASSERT(std::numeric_limits<T>::is_integer, "'bitfieldRotateLeft' accepts only integer values");
+
+  let BitSize:int = int(sizeof(T) * 8);
+  return (In shr T(Shift)) or (In shl T(BitSize - Shift));
+#}
+
+#template<typename genIUType>
+proc bitfieldFillOne*[T]( Value:T, FirstBit, BitCount:int):T = 
+#{
+  return Value or T(mask(BitCount) shl FirstBit);
+#}
+
+#template<length_t L, typename T, qualifier Q>
+proc bitfieldFillOne*[L,T](Value:Vec[L,T], FirstBit, BitCount:int):Vec[L,T] =
+#{
+  return Value or T(mask(BitCount) shl FirstBit);
+#}
+
+#template<typename genIUType>
+proc bitfieldFillZero*[T](Value:T, FirstBit:int, BitCount:int):T = 
+#{
+  return Value and T(not(mask(BitCount) shl FirstBit));
+#}
+
+#template<length_t L, typename T, qualifier Q>
+proc bitfieldFillZero*[L,T](Value:Vec[L,T], FirstBit, BitCount:int):Vec[L,T] =
+#{
+  return Value and T(not(mask(BitCount) shl FirstBit));
+#}
+
+proc bitfieldInterleave*( x, y:int8):int16 = 
+  return cast[int16](bitfieldInterleave(cast[uint8](x), cast[uint8](y)))
+
 ###################
 # more type names #
 ###################
@@ -823,6 +1119,8 @@ vecGen ui, uint32
 vecGen ul, uint64
 vecGen b, bool
 vecGen u8, uint8 
+vecGen u16, uint16 
+vecGen u32, uint32 
 
 
 
@@ -952,10 +1250,143 @@ comparisonOpPerComponent(`.>=`,`>=`)
 comparisonOpPerComponent(`.>`, `>` )
 comparisonOpPerComponent(`.!=`,`!=`)
 
+#bitinterleave premade
+proc bitfieldDeinterleave*(x:uint16):Vec2u8 = 
+#{
+  var REG1:uint16 = x
+  var REG2:uint16 = x shr 1
+
+  REG1 = REG1 and uint16(0x5555);
+  REG2 = REG2 and uint16(0x5555);
+
+  REG1 = ((REG1 shr 1) or REG1) and uint16(0x3333);
+  REG2 = ((REG2 shr 1) or REG2) and uint16(0x3333);
+
+  REG1 = ((REG1 shr 2) or REG1) and uint16(0x0F0F);
+  REG2 = ((REG2 shr 2) or REG2) and uint16(0x0F0F);
+
+  REG1 = ((REG1 shr 4) or REG1) and uint16(0x00FF);
+  REG2 = ((REG2 shr 4) or REG2) and uint16(0x00FF);
+
+  REG1 = ((REG1 shr 8) or REG1) and uint16(0xFFFF);
+  REG2 = ((REG2 shr 8) or REG2) and uint16(0xFFFF);
+
+  return vec2u8(uint8 REG1, uint8 REG2);
+#}
+
+proc bitfieldInterleave*( x, y:int16):int32 = 
+  return cast[int32](bitfieldInterleave(cast[uint16](x), cast[uint16](y)))
+
+proc bitfieldDeinterleave*(x:uint32):Vec2u16 = 
+#{
+  var REG1:uint32 = x;
+  var REG2:uint32 = x shr 1;
+
+  REG1 = REG1 and uint32(0x55555555);
+  REG2 = REG2 and uint32(0x55555555);
+
+  REG1 = ((REG1 shr 1) or REG1) and uint32(0x33333333);
+  REG2 = ((REG2 shr 1) or REG2) and uint32(0x33333333);
+
+  REG1 = ((REG1 shr 2) or REG1) and uint32(0x0F0F0F0F);
+  REG2 = ((REG2 shr 2) or REG2) and uint32(0x0F0F0F0F);
+
+  REG1 = ((REG1 shr 4) or REG1) and uint32(0x00FF00FF);
+  REG2 = ((REG2 shr 4) or REG2) and uint32(0x00FF00FF);
+
+  REG1 = ((REG1 shr 8) or REG1) and uint32(0x0000FFFF);
+  REG2 = ((REG2 shr 8) or REG2) and uint32(0x0000FFFF);
+
+  return vec2u16(uint16 REG1, uint16 REG2);
+#}
+
+proc bitfieldInterleave*(x, y:int32):int64 = 
+  return cast[int64](bitfieldInterleave(cast[uint32](x),cast[uint32](y)))
+
+proc bitfieldDeinterleave*(x:uint64):Vec2u32 = 
+#{
+  var REG1:uint64 = x;
+  var REG2:uint64 = x shr 1;
+
+  REG1 = REG1 and uint64(0x5555555555555555'u64);
+  REG2 = REG2 and uint64(0x5555555555555555'u64);
+
+  REG1 = ((REG1 shr 1) or REG1) and uint64(0x3333333333333333'u64);
+  REG2 = ((REG2 shr 1) or REG2) and uint64(0x3333333333333333'u64);
+
+  REG1 = ((REG1 shr 2) or REG1) and uint64(0x0F0F0F0F0F0F0F0F'u64);
+  REG2 = ((REG2 shr 2) or REG2) and uint64(0x0F0F0F0F0F0F0F0F'u64);
+
+  REG1 = ((REG1 shr 4) or REG1) and uint64(0x00FF00FF00FF00FF'u64);
+  REG2 = ((REG2 shr 4) or REG2) and uint64(0x00FF00FF00FF00FF'u64);
+
+  REG1 = ((REG1 shr 8) or REG1) and uint64(0x0000FFFF0000FFFF'u64);
+  REG2 = ((REG2 shr 8) or REG2) and uint64(0x0000FFFF0000FFFF'u64);
+
+  REG1 = ((REG1 shr 16) or REG1) and uint64(0x00000000FFFFFFFF'u64);
+  REG2 = ((REG2 shr 16) or REG2) and uint64(0x00000000FFFFFFFF'u64);
+
+  return vec2u32(uint32 REG1, uint32 REG2);
+#}
+
+proc bitfieldInterleave*(x, y, z:int8):int32 = 
+  return cast[int32](bitfieldInterleave(cast[uint8](x),cast[uint8](y),cast[uint8](z)))
+
+proc bitfieldInterleave*( x,  y,  z:int16):int64 = 
+  return cast[int64](bitfieldInterleave(cast[uint16](x),cast[uint16](y),cast[uint16](z)))
+
+proc bitfieldInterleave*( x,  y,  z:int32):int64 = 
+  return cast[int64](bitfieldInterleave(cast[uint32](x),cast[uint32](y),cast[uint32](z)))
+
+proc bitfieldInterleave*( x, y, z, w:int8):int32 = 
+  return cast[int32](bitfieldInterleave(cast[uint8](x),cast[uint8](y),cast[uint8](z),cast[uint8](w)))
+
+proc bitfieldInterleave*( x, y, z, w:int16):int64 = 
+  return cast[int64](bitfieldInterleave(cast[uint16](x),cast[uint16](y),cast[uint16](z),cast[uint16](w)))
+
+proc bitfieldInterleave*(v:Vec2u8):uint16 = 
+#{
+  return bitfieldInterleave(v.x, v.y);
+#}
+
+proc bitfieldInterleave*(v:Vec2u16):uint32 = 
+#{
+  return bitfieldInterleave(v.x, v.y);
+#}
+
+proc bitfieldInterleave*(v:Vec2u32):uint64 = 
+#{
+  return bitfieldInterleave(v.x, v.y);
+#}
+
+proc bitfieldInterleave*(v:Vec3u8):uint32 = 
+#{
+  return bitfieldInterleave(v.x, v.y, v.z);
+#}
+
+proc bitfieldInterleave*(v:Vec3u16):uint64 = 
+#{
+  return bitfieldInterleave(v.x, v.y, v.z);
+#}
+
+proc bitfieldInterleave*(v:Vec3u32):uint64 = 
+#{
+  return bitfieldInterleave(v.x, v.y, v.z);
+#}
+
+proc bitfieldInterleave*(v:Vec4u8):uint32 = 
+#{
+  return bitfieldInterleave(v.x, v.y, v.z, v.w);
+#}
+proc bitfieldInterleave*(v:Vec4u16):uint64 = 
+#{
+  return bitfieldInterleave(v.x, v.y, v.z, v.w);
+#}
+
 when isMainModule:
   var v0 = vec3(1.0, 0.5, 0)
   var u0 = vec3(1.0, 1.0, 0)
-  var c = cross(v0,u0)
+  var c {.used.} = cross(v0,u0)
 
   var v1 = vec4(1,2,3,4) div 2
 
